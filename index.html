@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>AI Code Cleaner PRO V3</title>
+
+<script src="https://unpkg.com/prettier@3.0.0/standalone.js"></script>
+<script src="https://unpkg.com/prettier@3.0.0/plugins/babel.js"></script>
+<script src="https://unpkg.com/prettier@3.0.0/plugins/html.js"></script>
+
+<style>
+body {
+  background:#0d1117;
+  color:#e6edf3;
+  font-family:monospace;
+  padding:15px;
+}
+textarea {
+  width:100%;
+  height:120px;
+  margin-bottom:10px;
+  background:#010409;
+  color:#58a6ff;
+  border:1px solid #30363d;
+  padding:8px;
+}
+input {
+  width:100%;
+  margin-bottom:5px;
+  padding:8px;
+  background:#010409;
+  color:#fff;
+  border:1px solid #30363d;
+}
+button {
+  padding:8px;
+  margin:4px;
+  background:#238636;
+  border:none;
+  color:white;
+}
+.file {
+  border:1px solid #30363d;
+  padding:10px;
+  margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>AI Cleaner PRO V3</h2>
+
+<input id="repo" placeholder="Repo naam">
+
+<div id="files"></div>
+
+<button onclick="addFile()">+ Bestand</button>
+<button onclick="saveSettings()">💾 Opslaan</button>
+
+<hr>
+
+<button onclick="processAll()">Clean + Format alles</button>
+<button onclick="sendAll()">🚀 Send ALL naar Working Copy</button>
+
+<script>
+let files = JSON.parse(localStorage.getItem("files") || "[]");
+
+function addFile(name="", content="") {
+  const id = Date.now();
+
+  files.push({ id, name, content });
+
+  render();
+}
+
+function render() {
+  const container = document.getElementById("files");
+  container.innerHTML = "";
+
+  files.forEach(f => {
+    container.innerHTML += `
+      <div class="file">
+        <input value="${f.name}" onchange="updateName(${f.id}, this.value)" placeholder="bestand.js">
+        <textarea onchange="updateContent(${f.id}, this.value)">${f.content}</textarea>
+        <button onclick="clean(${f.id})">Clean</button>
+        <button onclick="format(${f.id})">Format</button>
+        <button onclick="send(${f.id})">Send</button>
+      </div>
+    `;
+  });
+}
+
+function updateName(id, val) {
+  files.find(f => f.id === id).name = val;
+}
+
+function updateContent(id, val) {
+  files.find(f => f.id === id).content = val;
+}
+
+function sanitize(text) {
+  return text
+    .replace(/[""]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\u00A0/g, ' ')
+    .replace(/```[\s\S]*?```/g, m => m.replace(/```/g, ''))
+    .replace(/\r\n/g, '\n')
+    .replace(/\t/g, '  ')
+    .replace(/[ ]+$/gm, '');
+}
+
+function detectParser(code) {
+  if (code.trim().startsWith("<")) return "html";
+  if (code.includes("{") && code.includes("}")) return "babel";
+  return "babel";
+}
+
+async function clean(id) {
+  const f = files.find(x => x.id === id);
+  f.content = sanitize(f.content);
+  render();
+}
+
+async function format(id) {
+  try {
+    const f = files.find(x => x.id === id);
+    const parser = detectParser(f.content);
+
+    f.content = await prettier.format(f.content, {
+      parser,
+      plugins: prettierPlugins,
+      singleQuote: true
+    });
+
+    render();
+  } catch (e) {
+    alert("Format fout: " + e.message);
+  }
+}
+
+function processAll() {
+  files.forEach(f => {
+    f.content = sanitize(f.content);
+  });
+  render();
+}
+
+function send(id) {
+  const repo = document.getElementById("repo").value;
+  const f = files.find(x => x.id === id);
+
+  const url = `working-copy://x-callback-url/write?repo=${repo}&path=${f.name}&text=${encodeURIComponent(f.content)}`;
+
+  window.location.href = url;
+}
+
+function sendAll() {
+  let i = 0;
+
+  function next() {
+    if (i >= files.length) return;
+    send(files[i].id);
+    i++;
+    setTimeout(next, 1500);
+  }
+
+  next();
+}
+
+function saveSettings() {
+  localStorage.setItem("files", JSON.stringify(files));
+  localStorage.setItem("repo", document.getElementById("repo").value);
+  alert("Opgeslagen");
+}
+
+window.onload = () => {
+  document.getElementById("repo").value = localStorage.getItem("repo") || "";
+  render();
+};
+</script>
+
+</body>
+</html>
