@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Code-cleaner PRO v6</title>
+    <title>Code-cleaner PRO v6.2</title>
 
     <script src="https://unpkg.com/prettier@3.0.0/standalone.js"></script>
     <script src="https://unpkg.com/prettier@3.0.0/plugins/babel.js"></script>
@@ -27,7 +27,6 @@
             font-family: -apple-system, system-ui, sans-serif;
             padding: 20px 15px 40px 15px;
             margin: 0;
-            -webkit-font-smoothing: antialiased;
         }
 
         h1 { font-size: 22px; text-align: center; color: var(--ios-blue); margin-bottom: 20px; }
@@ -38,7 +37,6 @@
             padding: 15px;
             margin-bottom: 20px;
             border: 0.5px solid #38383a;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         label { display: block; color: #8e8e93; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; font-weight: 600; }
@@ -53,7 +51,6 @@
             padding: 12px;
             margin-bottom: 12px;
             box-sizing: border-box;
-            outline: none;
         }
 
         textarea {
@@ -62,28 +59,23 @@
             border: 1px solid #38383a;
             border-radius: 8px;
             color: #58a6ff;
-            font-family: "SF Mono", Menlo, monospace;
+            font-family: "SF Mono", monospace;
             padding: 12px;
             box-sizing: border-box;
-            min-height: 200px;
+            min-height: 180px;
             margin-bottom: 15px;
-            outline: none;
-            line-height: 1.4;
         }
 
         .btn {
             border: none;
             border-radius: 10px;
-            padding: 14px;
-            font-size: 16px;
+            padding: 12px 5px;
+            font-size: 14px;
             font-weight: 600;
             color: white;
             width: 100%;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            cursor: pointer;
         }
 
         .btn:active { opacity: 0.7; }
@@ -92,7 +84,12 @@
         .btn-purple { background: var(--ios-purple); }
         .btn-gray { background: var(--ios-gray); }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        /* Grid met 3 kolommen voor de knoppen per bestand */
+        .grid-3 { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 8px; 
+        }
 
         .delete-btn {
             color: var(--ios-red);
@@ -101,8 +98,6 @@
             width: 100%;
             padding: 10px;
             font-size: 13px;
-            margin-top: 5px;
-            font-weight: 500;
         }
 
         .zoom-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -111,7 +106,7 @@
 </head>
 <body>
 
-    <h1>Clean & Send PRO</h1>
+    <h1>Clean & Send PRO v6.2</h1>
 
     <div class="ios-group">
         <label>Repository Naam</label>
@@ -120,7 +115,7 @@
         <div class="zoom-row">
             <label style="margin:0">Zoom:</label>
             <input type="range" id="zoom" min="10" max="25" value="14" oninput="updateZoom(this.value)">
-            <span id="zoomVal" style="font-size: 13px; width: 35px;">14px</span>
+            <span id="zoomVal">14px</span>
         </div>
         
         <button class="btn btn-blue" onclick="saveSettings()">💾 Instellingen Opslaan</button>
@@ -128,23 +123,22 @@
 
     <div id="fileList"></div>
 
-    <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand</button>
+    <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand Toevoegen</button>
 
     <div style="margin-top: 30px; border-top: 1px solid #38383a; padding-top: 20px;">
         <button class="btn btn-green" onclick="processAll()">🪄 Clean & Format Alles</button>
-        <button class="btn btn-purple" onclick="sendAll()">🚀 Send naar Working Copy</button>
+        <button class="btn btn-purple" onclick="sendAll()">🚀 Alles naar Working Copy</button>
     </div>
 
     <script>
-        // Data laden uit geheugen
-        let items = JSON.parse(localStorage.getItem("cc_v6_data")) || [{ id: Date.now(), name: "index.html", content: "" }];
-        let currentZoom = localStorage.getItem("cc_zoom") || 14;
+        let items = JSON.parse(localStorage.getItem("cc_v62_data")) || [{ id: Date.now(), name: "index.html", content: "" }];
+        let currentZoom = localStorage.getItem("cc_zoom_v62") || 14;
 
         function saveSettings() {
-            localStorage.setItem("cc_v6_data", JSON.stringify(items));
-            localStorage.setItem("cc_repo_v6", document.getElementById('repo').value);
-            localStorage.setItem("cc_zoom", currentZoom);
-            alert("✅ Instellingen opgeslagen!");
+            localStorage.setItem("cc_v62_data", JSON.stringify(items));
+            localStorage.setItem("cc_repo_v62", document.getElementById('repo').value);
+            localStorage.setItem("cc_zoom_v62", currentZoom);
+            alert("✅ Opgeslagen!");
         }
 
         function updateZoom(v) {
@@ -160,22 +154,34 @@
 
         function updateItem(id, key, val) {
             const item = items.find(x => x.id === id);
-            if(item) item[key] = val;
+            if(item) {
+                item[key] = val;
+                localStorage.setItem("cc_v62_data", JSON.stringify(items));
+            }
         }
 
         function removeItem(id) {
             if(confirm("Bestand verwijderen?")) {
                 items = items.filter(x => x.id !== id);
                 if(items.length === 0) items.push({ id: Date.now(), name: "index.html", content: "" });
+                localStorage.setItem("cc_v62_data", JSON.stringify(items));
+                render();
+            }
+        }
+
+        // Functie om specifiek één item op te schonen
+        function cleanItem(id) {
+            const item = items.find(x => x.id === id);
+            if(item) {
+                item.content = item.content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
                 render();
             }
         }
 
         async function formatItem(id) {
             const item = items.find(x => x.id === id);
-            if(!item.content.trim()) return;
+            if(!item || !item.content.trim()) return;
 
-            // Bepaal of het HTML of JS is voor de formatter
             const isHTML = item.name.endsWith('.html') || item.content.trim().startsWith('<');
             const parser = isHTML ? 'html' : 'babel';
 
@@ -184,60 +190,47 @@
                     parser: parser,
                     plugins: prettierPlugins,
                     singleQuote: true,
-                    printWidth: 40, // Breedte geoptimaliseerd voor iPhone
-                    tabWidth: 2
+                    printWidth: 40
                 });
                 render();
             } catch (err) {
-                alert("❌ Formatteer fout: " + err.message);
+                alert("❌ Syntax fout in dit bestand.");
             }
         }
 
         function sendItem(id) {
             const repo = document.getElementById('repo').value;
             const item = items.find(x => x.id === id);
-
-            if(!repo) return alert("⚠️ Vul de Repo naam in!");
-            if(!item.name) return alert("⚠️ Vul de bestandsnaam in!");
-
-            // Veilige URL maken voor Working Copy
-            const baseUrl = "working-copy://x-callback-url/write";
-            const url = `${baseUrl}?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}&x-success=http://localhost`;
-
-            // Gebruik een onzichtbare link voor een stabiele sprong naar de app
-            const a = document.createElement('a');
-            a.href = url;
-            a.click();
+            if(!repo || !item.name) return alert("⚠️ Vul Repo en Naam in!");
+            
+            const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}&x-success=http://localhost`;
+            window.location.href = url;
         }
 
         async function processAll() {
             for (let item of items) {
-                // 1. Clean: Alleen foute iPhone quotes vervangen, enters behouden!
                 item.content = item.content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
-                
-                // 2. Format: Direct daarna formatteren
-                const isHTML = item.name.endsWith('.html') || item.content.trim().startsWith('<');
                 try {
+                    const isHTML = item.name.endsWith('.html') || item.content.trim().startsWith('<');
                     item.content = await prettier.format(item.content, {
                         parser: isHTML ? 'html' : 'babel',
                         plugins: prettierPlugins,
                         singleQuote: true,
                         printWidth: 40
                     });
-                } catch(e) { console.log("Skip format voor " + item.name); }
+                } catch(e) {}
             }
             render();
-            alert("✨ Alles opgeschoond en geformatteerd!");
+            alert("✨ Alles opgeschoond!");
         }
 
         function sendAll() {
-            if(items.length > 1) alert("De app verspringt nu een paar keer naar Working Copy...");
             let i = 0;
             const next = () => {
                 if (i < items.length) {
                     sendItem(items[i].id);
                     i++;
-                    setTimeout(next, 1500); // Wacht even tussen bestanden door
+                    setTimeout(next, 2000); 
                 }
             }
             next();
@@ -252,24 +245,24 @@
                 div.className = "ios-group";
                 div.innerHTML = `
                     <label>Bestandsnaam</label>
-                    <input type="text" value="${item.name}" placeholder="bijv. index.html" oninput="updateItem(${item.id}, 'name', this.value)">
+                    <input type="text" value="${item.name}" placeholder="index.html" oninput="updateItem(${item.id}, 'name', this.value)">
                     
-                    <label>Code Inhoud</label>
+                    <label>Code</label>
                     <textarea oninput="updateItem(${item.id}, 'content', this.value)" style="font-size: ${currentZoom}px">${item.content}</textarea>
                     
-                    <div class="grid">
-                        <button class="btn btn-gray" onclick="formatItem(${item.id})">✨ Format</button>
+                    <div class="grid-3">
+                        <button class="btn btn-gray" onclick="formatItem(${item.id})">✨ Form</button>
+                        <button class="btn btn-blue" onclick="cleanItem(${item.id})">🪄 Clean</button>
                         <button class="btn btn-purple" onclick="sendItem(${item.id})">🚀 Send</button>
                     </div>
-                    <button class="delete-btn" onclick="removeItem(${item.id})">🗑️ Bestand Verwijderen</button>
+                    <button class="delete-btn" onclick="removeItem(${item.id})">🗑️ Verwijder</button>
                 `;
                 container.appendChild(div);
             });
         }
 
-        // Bij opstarten
         window.onload = () => {
-            document.getElementById('repo').value = localStorage.getItem("cc_repo_v6") || "";
+            document.getElementById('repo').value = localStorage.getItem("cc_repo_v62") || "";
             document.getElementById('zoom').value = currentZoom;
             document.getElementById('zoomVal').innerText = currentZoom + 'px';
             render();
