@@ -2,6 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>AI Code Cleaner PRO V3</title>
 
 <script src="https://unpkg.com/prettier@3.0.0/standalone.js"></script>
@@ -9,69 +10,147 @@
 <script src="https://unpkg.com/prettier@3.0.0/plugins/html.js"></script>
 
 <style>
-body {
-  background:#0d1117;
-  color:#e6edf3;
-  font-family:monospace;
-  padding:15px;
-}
-textarea {
-  width:100%;
-  height:120px;
-  margin-bottom:10px;
-  background:#010409;
-  color:#58a6ff;
-  border:1px solid #30363d;
-  padding:8px;
-}
-input {
-  width:100%;
-  margin-bottom:5px;
-  padding:8px;
-  background:#010409;
-  color:#fff;
-  border:1px solid #30363d;
-}
-button {
-  padding:8px;
-  margin:4px;
-  background:#238636;
-  border:none;
-  color:white;
-}
-.file {
-  border:1px solid #30363d;
-  padding:10px;
-  margin-bottom:10px;
-}
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --accent: #58a6ff;
+    --success: #238636;
+    --danger: #da3633;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 15px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  h2 { font-size: 1.4rem; color: var(--accent); margin-bottom: 20px; text-align: center; }
+
+  /* Zoom Slider */
+  .zoom-controls {
+    background: var(--card);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .zoom-controls label { font-size: 0.8rem; white-space: nowrap; }
+
+  input[type="text"], textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #010409;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 16px; /* Voorkomt auto-zoom op iOS bij focus */
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  .file-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  }
+
+  .button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  button {
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: white;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  button:active { opacity: 0.7; }
+
+  .btn-add { background: var(--success); width: 100%; margin-bottom: 10px; }
+  .btn-save { background: var(--accent); width: 100%; margin-bottom: 20px; }
+  .btn-clean { background: #30363d; }
+  .btn-format { background: #30363d; }
+  .btn-send { background: #8957e5; grid-column: span 2; }
+  .btn-all { background: var(--success); margin-top: 10px; width: 100%; font-size: 1rem; padding: 15px; }
+  .btn-delete { background: var(--danger); margin-top: 10px; font-size: 0.7rem; padding: 5px; opacity: 0.6; }
+
+  hr { border: 0; border-top: 1px solid var(--border); margin: 25px 0; }
 </style>
 </head>
 
 <body>
 
-<h2>AI Cleaner PRO V3</h2>
+<h2>Clean & Send PRO</h2>
 
-<input id="repo" placeholder="Repo naam">
+<input id="repo" type="text" placeholder="Naam van je Repo">
+
+<div class="zoom-controls">
+  <label>Zoom Tekst:</label>
+  <input type="range" id="zoomRange" min="10" max="24" value="13" oninput="adjustZoom(this.value)">
+  <span id="zoomVal">13px</span>
+</div>
 
 <div id="files"></div>
 
-<button onclick="addFile()">+ Bestand</button>
-<button onclick="saveSettings()">💾 Opslaan</button>
+<button class="btn-add" onclick="addFile()">+ Nieuw Bestand</button>
+<button class="btn-save" onclick="saveSettings()">💾 Instellingen Opslaan</button>
 
 <hr>
 
-<button onclick="processAll()">Clean + Format alles</button>
-<button onclick="sendAll()">🚀 Send ALL naar Working Copy</button>
+<button class="btn-all" onclick="processAll()">🪄 Clean & Format Alles</button>
+<button class="btn-all" style="background: #8957e5;" onclick="sendAll()">🚀 Send naar Working Copy</button>
 
 <script>
 let files = JSON.parse(localStorage.getItem("files") || "[]");
+let currentFontSize = 13;
+
+function adjustZoom(val) {
+  currentFontSize = val;
+  document.getElementById('zoomVal').innerText = val + 'px';
+  const textareas = document.querySelectorAll('textarea');
+  textareas.forEach(t => t.style.fontSize = val + 'px');
+}
 
 function addFile(name="", content="") {
   const id = Date.now();
-
   files.push({ id, name, content });
-
   render();
+}
+
+function deleteFile(id) {
+  if(confirm("Bestand verwijderen?")) {
+    files = files.filter(f => f.id !== id);
+    render();
+  }
 }
 
 function render() {
@@ -79,24 +158,30 @@ function render() {
   container.innerHTML = "";
 
   files.forEach(f => {
-    container.innerHTML += `
-      <div class="file">
-        <input value="${f.name}" onchange="updateName(${f.id}, this.value)" placeholder="bestand.js">
-        <textarea onchange="updateContent(${f.id}, this.value)">${f.content}</textarea>
-        <button onclick="clean(${f.id})">Clean</button>
-        <button onclick="format(${f.id})">Format</button>
-        <button onclick="send(${f.id})">Send</button>
+    const div = document.createElement('div');
+    div.className = 'file-card';
+    div.innerHTML = `
+      <input type="text" value="${f.name}" onchange="updateName(${f.id}, this.value)" placeholder="bestandsnaam.js">
+      <textarea style="font-size: ${currentFontSize}px" onchange="updateContent(${f.id}, this.value)" placeholder="Plak hier je code...">${f.content}</textarea>
+      <div class="button-group">
+        <button class="btn-clean" onclick="clean(${f.id})">Clean</button>
+        <button class="btn-format" onclick="format(${f.id})">Format</button>
+        <button class="btn-send" onclick="send(${f.id})">Stuur naar App</button>
       </div>
+      <button class="btn-delete" onclick="deleteFile(${f.id})">Verwijder bestand</button>
     `;
+    container.appendChild(div);
   });
 }
 
 function updateName(id, val) {
-  files.find(f => f.id === id).name = val;
+  const file = files.find(f => f.id === id);
+  if(file) file.name = val;
 }
 
 function updateContent(id, val) {
-  files.find(f => f.id === id).content = val;
+  const file = files.find(f => f.id === id);
+  if(file) file.content = val;
 }
 
 function sanitize(text) {
@@ -112,8 +197,8 @@ function sanitize(text) {
 }
 
 function detectParser(code) {
-  if (code.trim().startsWith("<")) return "html";
-  if (code.includes("{") && code.includes("}")) return "babel";
+  const trimmed = code.trim();
+  if (trimmed.startsWith("<") || trimmed.startsWith("<!")) return "html";
   return "babel";
 }
 
@@ -131,7 +216,8 @@ async function format(id) {
     f.content = await prettier.format(f.content, {
       parser,
       plugins: prettierPlugins,
-      singleQuote: true
+      singleQuote: true,
+      printWidth: 40 // Smaller width for mobile screens
     });
 
     render();
@@ -145,34 +231,33 @@ function processAll() {
     f.content = sanitize(f.content);
   });
   render();
+  alert("Alles opgeschoond!");
 }
 
 function send(id) {
   const repo = document.getElementById("repo").value;
   const f = files.find(x => x.id === id);
+  if(!repo || !f.name) return alert("Repo of naam mist!");
 
-  const url = `working-copy://x-callback-url/write?repo=${repo}&path=${f.name}&text=${encodeURIComponent(f.content)}`;
-
+  const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(f.name)}&text=${encodeURIComponent(f.content)}`;
   window.location.href = url;
 }
 
 function sendAll() {
   let i = 0;
-
   function next() {
     if (i >= files.length) return;
     send(files[i].id);
     i++;
-    setTimeout(next, 1500);
+    setTimeout(next, 2000); // 2 seconden pauze voor iOS stabiliteit
   }
-
   next();
 }
 
 function saveSettings() {
   localStorage.setItem("files", JSON.stringify(files));
   localStorage.setItem("repo", document.getElementById("repo").value);
-  alert("Opgeslagen");
+  alert("Opgeslagen in browser geheugen");
 }
 
 window.onload = () => {
