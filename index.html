@@ -3,253 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Code-cleaner PRO v6.2</title>
-
+    <title>Code-cleaner PRO v6.2.1</title>
     <script src="https://unpkg.com/prettier@3.0.0/standalone.js"></script>
     <script src="https://unpkg.com/prettier@3.0.0/plugins/babel.js"></script>
     <script src="https://unpkg.com/prettier@3.0.0/plugins/html.js"></script>
-
     <style>
-        :root {
-            --ios-bg: #000000;
-            --ios-card: #1c1c1e;
-            --ios-blue: #0a84ff;
-            --ios-green: #32d74b;
-            --ios-purple: #bf5af2;
-            --ios-red: #ff453a;
-            --ios-text: #ffffff;
-            --ios-gray: #3a3a3c;
-        }
-
-        body {
-            background-color: var(--ios-bg);
-            color: var(--ios-text);
-            font-family: -apple-system, system-ui, sans-serif;
-            padding: 20px 15px 40px 15px;
-            margin: 0;
-        }
-
-        h1 { font-size: 22px; text-align: center; color: var(--ios-blue); margin-bottom: 20px; }
-
-        .ios-group {
-            background: var(--ios-card);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 0.5px solid #38383a;
-        }
-
-        label { display: block; color: #8e8e93; font-size: 11px; text-transform: uppercase; margin-bottom: 5px; font-weight: 600; }
-
-        input[type="text"] {
-            width: 100%;
-            background: #2c2c2e;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 17px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            width: 100%;
-            background: #000;
-            border: 1px solid #38383a;
-            border-radius: 8px;
-            color: #58a6ff;
-            font-family: "SF Mono", monospace;
-            padding: 12px;
-            box-sizing: border-box;
-            min-height: 180px;
-            margin-bottom: 15px;
-        }
-
-        .btn {
-            border: none;
-            border-radius: 10px;
-            padding: 12px 5px;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            width: 100%;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-
-        .btn:active { opacity: 0.7; }
+        :root { --ios-bg: #000; --ios-card: #1c1c1e; --ios-blue: #0a84ff; --ios-green: #32d74b; --ios-purple: #bf5af2; --ios-red: #ff453a; --ios-text: #fff; }
+        body { background: var(--ios-bg); color: var(--ios-text); font-family: -apple-system, sans-serif; padding: 20px 15px; margin: 0; }
+        h1 { font-size: 20px; text-align: center; color: var(--ios-blue); }
+        .ios-group { background: var(--ios-card); border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 0.5px solid #38383a; }
+        label { display: block; color: #8e8e93; font-size: 10px; text-transform: uppercase; margin-bottom: 5px; }
+        input[type="text"], textarea { width: 100%; background: #2c2c2e; border: none; border-radius: 8px; color: white; padding: 12px; box-sizing: border-box; outline: none; }
+        textarea { background: #000; border: 1px solid #38383a; color: #58a6ff; font-family: monospace; min-height: 180px; margin-bottom: 10px; }
+        .btn { border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; color: white; width: 100%; cursor: pointer; }
         .btn-blue { background: var(--ios-blue); }
         .btn-green { background: var(--ios-green); }
         .btn-purple { background: var(--ios-purple); }
-        .btn-gray { background: var(--ios-gray); }
-
-        /* Grid met 3 kolommen voor de knoppen per bestand */
-        .grid-3 { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 8px; 
-        }
-
-        .delete-btn {
-            color: var(--ios-red);
-            background: none;
-            border: none;
-            width: 100%;
-            padding: 10px;
-            font-size: 13px;
-        }
-
-        .zoom-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        input[type="range"] { flex: 1; accent-color: var(--ios-blue); }
+        .btn-gray { background: #3a3a3c; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .delete-btn { color: var(--ios-red); background: none; border: none; width: 100%; font-size: 12px; margin-top: 5px; }
     </style>
 </head>
 <body>
-
-    <h1>Clean & Send PRO v6.2</h1>
-
+    <h1>Code-cleaner PRO</h1>
     <div class="ios-group">
         <label>Repository Naam</label>
-        <input id="repo" type="text" placeholder="Naam in Working Copy...">
-        
-        <div class="zoom-row">
-            <label style="margin:0">Zoom:</label>
-            <input type="range" id="zoom" min="10" max="25" value="14" oninput="updateZoom(this.value)">
-            <span id="zoomVal">14px</span>
-        </div>
-        
-        <button class="btn btn-blue" onclick="saveSettings()">💾 Instellingen Opslaan</button>
+        <input id="repo" type="text" oninput="saveGlobal()" placeholder="Naam...">
+        <button class="btn btn-blue" style="margin-top:10px" onclick="saveGlobal()">💾 Forceer Opslaan</button>
     </div>
-
     <div id="fileList"></div>
-
-    <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand Toevoegen</button>
-
-    <div style="margin-top: 30px; border-top: 1px solid #38383a; padding-top: 20px;">
-        <button class="btn btn-green" onclick="processAll()">🪄 Clean & Format Alles</button>
+    <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand</button>
+    <div style="margin-top:30px; border-top:1px solid #38383a; padding-top:20px;">
         <button class="btn btn-purple" onclick="sendAll()">🚀 Alles naar Working Copy</button>
     </div>
-
     <script>
-        let items = JSON.parse(localStorage.getItem("cc_v62_data")) || [{ id: Date.now(), name: "index.html", content: "" }];
-        let currentZoom = localStorage.getItem("cc_zoom_v62") || 14;
+        let items = JSON.parse(localStorage.getItem("cc_final_storage")) || [{ id: Date.now(), name: "index.html", content: "" }];
 
-        function saveSettings() {
-            localStorage.setItem("cc_v62_data", JSON.stringify(items));
-            localStorage.setItem("cc_repo_v62", document.getElementById('repo').value);
-            localStorage.setItem("cc_zoom_v62", currentZoom);
-            alert("✅ Opgeslagen!");
-        }
-
-        function updateZoom(v) {
-            currentZoom = v;
-            document.getElementById('zoomVal').innerText = v + 'px';
-            document.querySelectorAll('textarea').forEach(t => t.style.fontSize = v + 'px');
+        function saveGlobal() {
+            localStorage.setItem("cc_final_storage", JSON.stringify(items));
+            localStorage.setItem("cc_repo_final", document.getElementById('repo').value);
         }
 
         function addFile() {
             items.push({ id: Date.now(), name: "", content: "" });
             render();
+            saveGlobal();
         }
 
         function updateItem(id, key, val) {
             const item = items.find(x => x.id === id);
-            if(item) {
-                item[key] = val;
-                localStorage.setItem("cc_v62_data", JSON.stringify(items));
-            }
+            if(item) { item[key] = val; saveGlobal(); }
         }
 
         function removeItem(id) {
             if(confirm("Bestand verwijderen?")) {
                 items = items.filter(x => x.id !== id);
                 if(items.length === 0) items.push({ id: Date.now(), name: "index.html", content: "" });
-                localStorage.setItem("cc_v62_data", JSON.stringify(items));
+                saveGlobal();
                 render();
             }
         }
 
-        // Functie om specifiek één item op te schonen
         function cleanItem(id) {
             const item = items.find(x => x.id === id);
             if(item) {
                 item.content = item.content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
                 render();
+                saveGlobal();
             }
         }
 
         async function formatItem(id) {
             const item = items.find(x => x.id === id);
             if(!item || !item.content.trim()) return;
-
             const isHTML = item.name.endsWith('.html') || item.content.trim().startsWith('<');
-            const parser = isHTML ? 'html' : 'babel';
-
             try {
-                item.content = await prettier.format(item.content, {
-                    parser: parser,
-                    plugins: prettierPlugins,
-                    singleQuote: true,
-                    printWidth: 40
-                });
+                item.content = await prettier.format(item.content, { parser: isHTML ? 'html' : 'babel', plugins: prettierPlugins, singleQuote: true, printWidth: 40 });
                 render();
-            } catch (err) {
-                alert("❌ Syntax fout in dit bestand.");
-            }
+                saveGlobal();
+            } catch (err) { alert("Check syntax!"); }
         }
 
         function sendItem(id) {
             const repo = document.getElementById('repo').value;
             const item = items.find(x => x.id === id);
-            if(!repo || !item.name) return alert("⚠️ Vul Repo en Naam in!");
-            
-            const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}&x-success=http://localhost`;
-            window.location.href = url;
-        }
-
-        async function processAll() {
-            for (let item of items) {
-                item.content = item.content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
-                try {
-                    const isHTML = item.name.endsWith('.html') || item.content.trim().startsWith('<');
-                    item.content = await prettier.format(item.content, {
-                        parser: isHTML ? 'html' : 'babel',
-                        plugins: prettierPlugins,
-                        singleQuote: true,
-                        printWidth: 40
-                    });
-                } catch(e) {}
-            }
-            render();
-            alert("✨ Alles opgeschoond!");
-        }
-
-        function sendAll() {
-            let i = 0;
-            const next = () => {
-                if (i < items.length) {
-                    sendItem(items[i].id);
-                    i++;
-                    setTimeout(next, 2000); 
-                }
-            }
-            next();
+            if(!repo || !item.name) return alert("Vul repo in!");
+            window.location.href = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}&x-success=http://localhost`;
         }
 
         function render() {
             const container = document.getElementById("fileList");
             container.innerHTML = "";
-
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = "ios-group";
                 div.innerHTML = `
-                    <label>Bestandsnaam</label>
-                    <input type="text" value="${item.name}" placeholder="index.html" oninput="updateItem(${item.id}, 'name', this.value)">
-                    
-                    <label>Code</label>
-                    <textarea oninput="updateItem(${item.id}, 'content', this.value)" style="font-size: ${currentZoom}px">${item.content}</textarea>
-                    
+                    <input type="text" value="${item.name}" placeholder="Bestandsnaam..." oninput="updateItem(${item.id}, 'name', this.value)">
+                    <textarea oninput="updateItem(${item.id}, 'content', this.value)">${item.content}</textarea>
                     <div class="grid-3">
                         <button class="btn btn-gray" onclick="formatItem(${item.id})">✨ Form</button>
                         <button class="btn btn-blue" onclick="cleanItem(${item.id})">🪄 Clean</button>
@@ -262,9 +112,7 @@
         }
 
         window.onload = () => {
-            document.getElementById('repo').value = localStorage.getItem("cc_repo_v62") || "";
-            document.getElementById('zoom').value = currentZoom;
-            document.getElementById('zoomVal').innerText = currentZoom + 'px';
+            document.getElementById('repo').value = localStorage.getItem("cc_repo_final") || "";
             render();
         };
     </script>
