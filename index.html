@@ -22,19 +22,17 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, system-ui, sans-serif;
-    padding: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 15px;
     margin: 0;
   }
 
-  /* Header & Controls */
-  .sticky-top {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--bg);
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
+  .header {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
   }
 
   input[type="text"], textarea {
@@ -45,168 +43,169 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 12px;
-    font-size: 16px; /* Essentieel voor iPhone */
-    margin-top: 8px;
+    font-size: 16px;
+    margin-bottom: 10px;
   }
 
-  .zoom-container {
+  .zoom-panel {
     display: flex;
     align-items: center;
-    background: var(--card);
-    padding: 10px;
-    border-radius: 8px;
+    gap: 10px;
     margin: 10px 0;
-    gap: 15px;
+    font-size: 14px;
   }
 
-  .zoom-container input { flex: 1; height: 25px; }
+  .zoom-panel input { flex: 1; accent-color: var(--accent); }
 
-  /* Knoppen styling */
   .btn {
-    padding: 12px;
+    width: 100%;
+    padding: 14px;
     border-radius: 8px;
     border: none;
     font-weight: bold;
     color: white;
-    font-size: 14px;
+    font-size: 15px;
+    margin-bottom: 10px;
     cursor: pointer;
-    display: block;
-    width: 100%;
-    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
   }
 
   .btn-blue { background: var(--accent); }
   .btn-green { background: var(--success); }
-  .btn-copy { background: #8b949e; }
   .btn-purple { background: #8957e5; }
-  .btn-small { padding: 8px; font-size: 12px; }
+  .btn-gray { background: #30363d; font-size: 13px; padding: 10px; }
 
   .file-card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 12px;
     padding: 15px;
-    margin-top: 15px;
+    margin-top: 20px;
   }
 
-  .action-grid {
+  .grid-tools {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-top: 10px;
+  }
+
+  textarea {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    min-height: 180px;
+    white-space: pre;
+    overflow-x: auto;
   }
 </style>
 </head>
-
 <body>
 
-<div class="sticky-top">
-  <h2>Code-cleaner PRO</h2>
+<div class="header">
+  <h2 style="margin-top:0; color:var(--accent); text-align:center;">Code-cleaner PRO</h2>
   <input id="repo" type="text" placeholder="Working Copy Repo Naam">
   
-  <div class="zoom-container">
+  <div class="zoom-panel">
     <span>Zoom:</span>
-    <input type="range" min="10" max="30" value="14" id="zoomSlider">
-    <b id="zoomLabel">14px</b>
+    <input type="range" min="10" max="30" value="14" id="zSlider">
+    <span id="zVal" style="min-width:40px">14px</span>
   </div>
-
-  <button class="btn btn-blue" onclick="saveSettings()">💾 Opslaan & Vernieuwen</button>
+  
+  <button class="btn btn-blue" onclick="saveData()">💾 Instellingen Opslaan</button>
 </div>
 
-<div id="filesContainer"></div>
+<button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand</button>
 
-<button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand Toevoegen</button>
+<div id="list"></div>
 
-<div style="margin-top: 20px;">
-  <button class="btn btn-green" onclick="processAll()">🪄 Alles Cleanen & Formatteren</button>
+<div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
+  <button class="btn btn-green" onclick="processAll()">🪄 Clean & Format Alles</button>
   <button class="btn btn-purple" onclick="sendAll()">🚀 Alles naar Working Copy</button>
 </div>
 
 <script>
-let files = JSON.parse(localStorage.getItem("files_v4") || "[]");
-const slider = document.getElementById('zoomSlider');
-const zoomLabel = document.getElementById('zoomLabel');
+let items = JSON.parse(localStorage.getItem("cc_items") || "[]");
+const slider = document.getElementById('zSlider');
+const zVal = document.getElementById('zVal');
 
-// Zoom functie die echt werkt op alle textareas
-slider.addEventListener('input', (e) => {
-  const size = e.target.value + "px";
-  zoomLabel.innerText = size;
-  document.querySelectorAll('textarea').forEach(el => {
-    el.style.fontSize = size;
-  });
-});
+// De zoom-logica
+slider.oninput = function() {
+  const px = this.value + "px";
+  zVal.innerText = px;
+  document.querySelectorAll('textarea').forEach(t => t.style.fontSize = px);
+};
 
 function addFile() {
-  files.push({ id: Date.now(), name: "", content: "" });
+  items.push({ id: Date.now(), name: "", content: "" });
   render();
 }
 
 function render() {
-  const container = document.getElementById("filesContainer");
+  const container = document.getElementById("list");
   container.innerHTML = "";
   
-  files.forEach(f => {
+  items.forEach(item => {
     const card = document.createElement('div');
     card.className = 'file-card';
     card.innerHTML = `
-      <input type="text" value="${f.name}" placeholder="bestand.html" onchange="updateFile(${f.id}, 'name', this.value)">
-      <textarea id="txt-${f.id}" placeholder="Plak code hier..." onchange="updateFile(${f.id}, 'content', this.value)">${f.content}</textarea>
+      <input type="text" value="${item.name}" placeholder="index.html" oninput="updateItem(${item.id}, 'name', this.value)">
+      <textarea id="t-${item.id}" placeholder="Plak code hier..." oninput="updateItem(${item.id}, 'content', this.value)" style="font-size:${slider.value}px">${item.content}</textarea>
       
-      <div class="action-grid">
-        <button class="btn btn-copy" onclick="copyToClipboard(${f.id})">📋 Copy</button>
-        <button class="btn btn-blue" onclick="formatSingle(${f.id})">Format</button>
-        <button class="btn btn-purple" style="grid-column: span 2;" onclick="sendSingle(${f.id})">Stuur naar Working Copy</button>
+      <div class="grid-tools">
+        <button class="btn btn-gray" onclick="copyItem(${item.id})">📋 Copy</button>
+        <button class="btn btn-gray" onclick="formatItem(${item.id})">✨ Format</button>
       </div>
-      <button class="btn btn-small" style="background:transparent; color:#f85149;" onclick="removeFile(${f.id})">Verwijder bestand</button>
+      <button class="btn btn-purple" onclick="sendItem(${item.id})">🚀 Send naar App</button>
+      <button onclick="removeItem(${item.id})" style="background:none; border:none; color:#f85149; width:100%; font-size:12px; margin-top:5px;">Verwijderen</button>
     `;
     container.appendChild(card);
   });
-  // Reset font-size na render
-  document.querySelectorAll('textarea').forEach(el => el.style.fontSize = slider.value + "px");
 }
 
-function updateFile(id, key, val) {
-  const f = files.find(x => x.id === id);
-  if(f) f[key] = val;
+function updateItem(id, key, val) {
+  const item = items.find(x => x.id === id);
+  if(item) item[key] = val;
 }
 
-function removeFile(id) {
-  if(confirm("Bestand wissen?")) {
-    files = files.filter(x => x.id !== id);
+function removeItem(id) {
+  if(confirm("Zeker weten?")) {
+    items = items.filter(x => x.id !== id);
     render();
   }
 }
 
-async function formatSingle(id) {
-  const f = files.find(x => x.id === id);
-  const parser = f.content.includes('<') ? 'html' : 'babel';
+function copyItem(id) {
+  const item = items.find(x => x.id === id);
+  navigator.clipboard.writeText(item.content);
+  alert("Gekopieerd!");
+}
+
+async function formatItem(id) {
+  const item = items.find(x => x.id === id);
+  const parser = item.content.includes('<') ? 'html' : 'babel';
   try {
-    f.content = await prettier.format(f.content, { 
-      parser, plugins: prettierPlugins, singleQuote: true, printWidth: 50 
+    item.content = await prettier.format(item.content, { 
+      parser, plugins: prettierPlugins, singleQuote: true, printWidth: 45 
     });
     render();
-  } catch (e) { alert("Fout: " + e.message); }
+  } catch (e) { alert("Format fout: " + e.message); }
 }
 
-function copyToClipboard(id) {
-  const f = files.find(x => x.id === id);
-  navigator.clipboard.writeText(f.content).then(() => alert("Gekopieerd!"));
-}
-
-function sendSingle(id) {
+function sendItem(id) {
   const repo = document.getElementById('repo').value;
-  const f = files.find(x => x.id === id);
-  if(!repo || !f.name) return alert("Repo of naam ontbreekt");
+  const item = items.find(x => x.id === id);
+  if(!repo || !item.name) return alert("Repo naam en bestandsnaam verplicht!");
   
-  const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(f.name)}&text=${encodeURIComponent(f.content)}`;
+  const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}`;
   window.location.href = url;
 }
 
 function sendAll() {
   let i = 0;
   const next = () => {
-    if (i < files.length) {
-      sendSingle(files[i].id);
+    if (i < items.length) {
+      sendItem(items[i].id);
       i++;
       setTimeout(next, 2500);
     }
@@ -215,22 +214,23 @@ function sendAll() {
 }
 
 function processAll() {
-  files.forEach(f => {
-    f.content = f.content.replace(/[""]/g, '"').replace(/[‘’]/g, "'").trim();
+  items.forEach(item => {
+    item.content = item.content.replace(/[""]/g, '"').replace(/[‘’]/g, "'").trim();
   });
   render();
 }
 
-function saveSettings() {
-  localStorage.setItem("files_v4", JSON.stringify(files));
-  localStorage.setItem("repo_v4", document.getElementById('repo').value);
-  location.reload(); // Harde verversing om alles schoon te maken
+function saveData() {
+  localStorage.setItem("cc_items", JSON.stringify(items));
+  localStorage.setItem("cc_repo", document.getElementById('repo').value);
+  alert("Opgeslagen!");
 }
 
 window.onload = () => {
-  document.getElementById('repo').value = localStorage.getItem("repo_v4") || "";
+  document.getElementById('repo').value = localStorage.getItem("cc_repo") || "";
   render();
 };
 </script>
+
 </body>
 </html>
