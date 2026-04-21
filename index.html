@@ -22,7 +22,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, system-ui, sans-serif;
     padding: 15px;
     margin: 0;
   }
@@ -35,6 +35,9 @@
     margin-bottom: 15px;
   }
 
+  /* De Zoom beïnvloedt nu alles in de editor */
+  .zoom-area { transition: font-size 0.2s; }
+
   input[type="text"], textarea {
     width: 100%;
     box-sizing: border-box;
@@ -43,7 +46,7 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 12px;
-    font-size: 16px;
+    font-size: 16px; /* Voorkomt iOS auto-zoom */
     margin-bottom: 10px;
   }
 
@@ -53,6 +56,9 @@
     gap: 10px;
     margin: 10px 0;
     font-size: 14px;
+    background: rgba(255,255,255,0.05);
+    padding: 8px;
+    border-radius: 8px;
   }
 
   .zoom-panel input { flex: 1; accent-color: var(--accent); }
@@ -71,69 +77,73 @@
     justify-content: center;
     align-items: center;
     gap: 8px;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  .btn:active { opacity: 0.8; transform: scale(0.98); }
 
   .btn-blue { background: var(--accent); }
   .btn-green { background: var(--success); }
   .btn-purple { background: #8957e5; }
-  .btn-gray { background: #30363d; font-size: 13px; padding: 10px; }
+  .btn-gray { background: #30363d; font-size: 13px; }
 
   .file-card {
     background: var(--card);
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 15px;
-    margin-top: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   }
 
   .grid-tools {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+    margin-bottom: 10px;
   }
 
   textarea {
-    font-family: 'SF Mono', 'Menlo', monospace;
-    min-height: 180px;
-    white-space: pre;
-    overflow-x: auto;
+    font-family: 'SF Mono', monospace;
+    min-height: 200px;
   }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h2 style="margin-top:0; color:var(--accent); text-align:center;">Code-cleaner PRO</h2>
-  <input id="repo" type="text" placeholder="Working Copy Repo Naam">
+  <h2 style="margin:0 0 15px 0; color:var(--accent); text-align:center;">Code-cleaner PRO</h2>
+  <input id="repo" type="text" placeholder="Naam van je Repo in Working Copy">
   
   <div class="zoom-panel">
     <span>Zoom:</span>
-    <input type="range" min="10" max="30" value="14" id="zSlider">
-    <span id="zVal" style="min-width:40px">14px</span>
+    <input type="range" min="10" max="25" value="15" id="zSlider">
+    <span id="zVal">15px</span>
   </div>
   
   <button class="btn btn-blue" onclick="saveData()">💾 Instellingen Opslaan</button>
 </div>
 
-<button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand</button>
+<div id="list" class="zoom-area"></div>
 
-<div id="list"></div>
+<button class="btn btn-green" onclick="addFile()">+ Extra Bestand Toevoegen</button>
 
-<div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">
-  <button class="btn btn-green" onclick="processAll()">🪄 Clean & Format Alles</button>
+<div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;">
+  <button class="btn btn-green" onclick="processAll()">🪄 Alles Opschonen</button>
   <button class="btn btn-purple" onclick="sendAll()">🚀 Alles naar Working Copy</button>
 </div>
 
 <script>
-let items = JSON.parse(localStorage.getItem("cc_items") || "[]");
+let items = JSON.parse(localStorage.getItem("cc_v4")) || [];
 const slider = document.getElementById('zSlider');
 const zVal = document.getElementById('zVal');
 
-// De zoom-logica
+// Zoom effect op de textareas
 slider.oninput = function() {
-  const px = this.value + "px";
-  zVal.innerText = px;
-  document.querySelectorAll('textarea').forEach(t => t.style.fontSize = px);
+  zVal.innerText = this.value + "px";
+  document.querySelectorAll('textarea').forEach(t => {
+    t.style.fontSize = this.value + "px";
+  });
 };
 
 function addFile() {
@@ -145,19 +155,25 @@ function render() {
   const container = document.getElementById("list");
   container.innerHTML = "";
   
+  if (items.length === 0) {
+    items.push({ id: Date.now(), name: "index.html", content: "" });
+  }
+
   items.forEach(item => {
     const card = document.createElement('div');
     card.className = 'file-card';
     card.innerHTML = `
-      <input type="text" value="${item.name}" placeholder="index.html" oninput="updateItem(${item.id}, 'name', this.value)">
-      <textarea id="t-${item.id}" placeholder="Plak code hier..." oninput="updateItem(${item.id}, 'content', this.value)" style="font-size:${slider.value}px">${item.content}</textarea>
+      <input type="text" value="${item.name}" placeholder="bestandsnaam.html" oninput="updateItem(${item.id}, 'name', this.value)">
+      <textarea id="t-${item.id}" placeholder="Plak hier de code van Claude..." oninput="updateItem(${item.id}, 'content', this.value)" style="font-size:${slider.value}px">${item.content}</textarea>
       
       <div class="grid-tools">
         <button class="btn btn-gray" onclick="copyItem(${item.id})">📋 Copy</button>
         <button class="btn btn-gray" onclick="formatItem(${item.id})">✨ Format</button>
       </div>
-      <button class="btn btn-purple" onclick="sendItem(${item.id})">🚀 Send naar App</button>
-      <button onclick="removeItem(${item.id})" style="background:none; border:none; color:#f85149; width:100%; font-size:12px; margin-top:5px;">Verwijderen</button>
+      <button class="btn btn-purple" onclick="sendItem(${item.id})">🚀 Send naar Working Copy</button>
+      <div style="text-align:center; margin-top:5px;">
+        <span onclick="removeItem(${item.id})" style="color:#f85149; font-size:12px; cursor:pointer;">Bestand Verwijderen</span>
+      </div>
     `;
     container.appendChild(card);
   });
@@ -169,7 +185,7 @@ function updateItem(id, key, val) {
 }
 
 function removeItem(id) {
-  if(confirm("Zeker weten?")) {
+  if(items.length > 1 && confirm("Bestand wissen?")) {
     items = items.filter(x => x.id !== id);
     render();
   }
@@ -178,15 +194,16 @@ function removeItem(id) {
 function copyItem(id) {
   const item = items.find(x => x.id === id);
   navigator.clipboard.writeText(item.content);
-  alert("Gekopieerd!");
+  alert("Gekopieerd naar klembord!");
 }
 
 async function formatItem(id) {
   const item = items.find(x => x.id === id);
-  const parser = item.content.includes('<') ? 'html' : 'babel';
+  if(!item.content) return;
+  const parser = item.content.trim().startsWith('<') ? 'html' : 'babel';
   try {
     item.content = await prettier.format(item.content, { 
-      parser, plugins: prettierPlugins, singleQuote: true, printWidth: 45 
+      parser, plugins: prettierPlugins, singleQuote: true, printWidth: 40 
     });
     render();
   } catch (e) { alert("Format fout: " + e.message); }
@@ -195,7 +212,7 @@ async function formatItem(id) {
 function sendItem(id) {
   const repo = document.getElementById('repo').value;
   const item = items.find(x => x.id === id);
-  if(!repo || !item.name) return alert("Repo naam en bestandsnaam verplicht!");
+  if(!repo || !item.name) return alert("Vul repo naam en bestandsnaam in!");
   
   const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}`;
   window.location.href = url;
@@ -207,7 +224,7 @@ function sendAll() {
     if (i < items.length) {
       sendItem(items[i].id);
       i++;
-      setTimeout(next, 2500);
+      setTimeout(next, 2000);
     }
   };
   next();
@@ -218,19 +235,19 @@ function processAll() {
     item.content = item.content.replace(/[""]/g, '"').replace(/[‘’]/g, "'").trim();
   });
   render();
+  alert("Alles opgeschoond!");
 }
 
 function saveData() {
-  localStorage.setItem("cc_items", JSON.stringify(items));
-  localStorage.setItem("cc_repo", document.getElementById('repo').value);
-  alert("Opgeslagen!");
+  localStorage.setItem("cc_v4", JSON.stringify(items));
+  localStorage.setItem("cc_repo_v4", document.getElementById('repo').value);
+  alert("Instellingen opgeslagen!");
 }
 
 window.onload = () => {
-  document.getElementById('repo').value = localStorage.getItem("cc_repo") || "";
+  document.getElementById('repo').value = localStorage.getItem("cc_repo_v4") || "";
   render();
 };
 </script>
-
 </body>
 </html>
