@@ -27,14 +27,14 @@
     margin: 0;
   }
 
-  h2 { font-size: 1.2rem; color: var(--accent); text-align: center; margin: 15px 0; }
-
-  .controls {
-    background: var(--card);
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    margin-bottom: 15px;
+  /* Header & Controls */
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
   }
 
   input[type="text"], textarea {
@@ -43,78 +43,98 @@
     background: #010409;
     color: var(--text);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 12px;
-    font-size: 16px; /* Voorkomt iOS zoom */
-    margin-bottom: 10px;
+    font-size: 16px; /* Essentieel voor iPhone */
+    margin-top: 8px;
   }
 
-  textarea { font-family: monospace; min-height: 200px; }
+  .zoom-container {
+    display: flex;
+    align-items: center;
+    background: var(--card);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    gap: 15px;
+  }
 
-  .zoom-box { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.8rem; }
+  .zoom-container input { flex: 1; height: 25px; }
+
+  /* Knoppen styling */
+  .btn {
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .btn-blue { background: var(--accent); }
+  .btn-green { background: var(--success); }
+  .btn-copy { background: #8b949e; }
+  .btn-purple { background: #8957e5; }
+  .btn-small { padding: 8px; font-size: 12px; }
 
   .file-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 15px;
+    padding: 15px;
+    margin-top: 15px;
   }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-  button {
-    padding: 12px;
-    border-radius: 6px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    color: white;
-    font-size: 0.85rem;
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
   }
-
-  .btn-blue { background: var(--accent); }
-  .btn-green { background: var(--success); }
-  .btn-gray { background: #30363d; }
-  .btn-purple { background: #8957e5; grid-column: span 2; }
-  .btn-full { width: 100%; margin-bottom: 10px; padding: 15px; }
-
-  hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
 </style>
 </head>
 
 <body>
 
-<h2>Code-cleaner PRO</h2>
-
-<div class="controls">
+<div class="sticky-top">
+  <h2>Code-cleaner PRO</h2>
   <input id="repo" type="text" placeholder="Working Copy Repo Naam">
-  <div class="zoom-box">
+  
+  <div class="zoom-container">
     <span>Zoom:</span>
-    <input type="range" id="z" min="10" max="25" value="13" oninput="updateZoom(this.value)">
-    <span id="zv">13px</span>
+    <input type="range" min="10" max="30" value="14" id="zoomSlider">
+    <b id="zoomLabel">14px</b>
   </div>
-  <button class="btn-blue btn-full" onclick="saveSettings()">💾 Instellingen Opslaan</button>
+
+  <button class="btn btn-blue" onclick="saveSettings()">💾 Opslaan & Vernieuwen</button>
 </div>
 
-<div id="files"></div>
+<div id="filesContainer"></div>
 
-<button class="btn-green btn-full" onclick="addFile()">+ Nieuw Bestand</button>
+<button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand Toevoegen</button>
 
-<hr>
-
-<button class="btn-green btn-full" onclick="processAll()">🪄 Clean & Format Alles</button>
-<button class="btn-purple btn-full" onclick="sendAll()">🚀 Alles naar Working Copy</button>
+<div style="margin-top: 20px;">
+  <button class="btn btn-green" onclick="processAll()">🪄 Alles Cleanen & Formatteren</button>
+  <button class="btn btn-purple" onclick="sendAll()">🚀 Alles naar Working Copy</button>
+</div>
 
 <script>
-let files = JSON.parse(localStorage.getItem("cleaner_files") || "[]");
-let fontSize = 13;
+let files = JSON.parse(localStorage.getItem("files_v4") || "[]");
+const slider = document.getElementById('zoomSlider');
+const zoomLabel = document.getElementById('zoomLabel');
 
-function updateZoom(v) {
-  fontSize = v;
-  document.getElementById('zv').innerText = v + 'px';
-  document.querySelectorAll('textarea').forEach(t => t.style.fontSize = v + 'px');
-}
+// Zoom functie die echt werkt op alle textareas
+slider.addEventListener('input', (e) => {
+  const size = e.target.value + "px";
+  zoomLabel.innerText = size;
+  document.querySelectorAll('textarea').forEach(el => {
+    el.style.fontSize = size;
+  });
+});
 
 function addFile() {
   files.push({ id: Date.now(), name: "", content: "" });
@@ -122,90 +142,93 @@ function addFile() {
 }
 
 function render() {
-  const container = document.getElementById("files");
+  const container = document.getElementById("filesContainer");
   container.innerHTML = "";
+  
   files.forEach(f => {
-    const d = document.createElement('div');
-    d.className = 'file-card';
-    d.innerHTML = `
-      <input type="text" value="${f.name}" onchange="updateF(${f.id}, 'name', this.value)" placeholder="index.html">
-      <textarea style="font-size:${fontSize}px" onchange="updateF(${f.id}, 'content', this.value)" placeholder="Plak code van Claude...">${f.content}</textarea>
-      <div class="grid">
-        <button class="btn-gray" onclick="clean(${f.id})">Clean</button>
-        <button class="btn-gray" onclick="format(${f.id})">Format</button>
-        <button class="btn-gray" onclick="copyToClipboard(${f.id})">Copy</button>
-        <button class="btn-purple" onclick="send(${f.id})">Send naar Working Copy</button>
+    const card = document.createElement('div');
+    card.className = 'file-card';
+    card.innerHTML = `
+      <input type="text" value="${f.name}" placeholder="bestand.html" onchange="updateFile(${f.id}, 'name', this.value)">
+      <textarea id="txt-${f.id}" placeholder="Plak code hier..." onchange="updateFile(${f.id}, 'content', this.value)">${f.content}</textarea>
+      
+      <div class="action-grid">
+        <button class="btn btn-copy" onclick="copyToClipboard(${f.id})">📋 Copy</button>
+        <button class="btn btn-blue" onclick="formatSingle(${f.id})">Format</button>
+        <button class="btn btn-purple" style="grid-column: span 2;" onclick="sendSingle(${f.id})">Stuur naar Working Copy</button>
       </div>
+      <button class="btn btn-small" style="background:transparent; color:#f85149;" onclick="removeFile(${f.id})">Verwijder bestand</button>
     `;
-    container.appendChild(d);
+    container.appendChild(card);
   });
+  // Reset font-size na render
+  document.querySelectorAll('textarea').forEach(el => el.style.fontSize = slider.value + "px");
 }
 
-function updateF(id, key, val) {
+function updateFile(id, key, val) {
   const f = files.find(x => x.id === id);
   if(f) f[key] = val;
 }
 
-function sanitize(t) {
-  return t.replace(/[""]/g, '"').replace(/[‘’]/g, "'")
-          .replace(/[\u200B-\u200D\uFEFF]/g, '')
-          .replace(/```[\s\S]*?```/g, m => m.replace(/```/g, ''))
-          .replace(/\t/g, '  ').trim();
+function removeFile(id) {
+  if(confirm("Bestand wissen?")) {
+    files = files.filter(x => x.id !== id);
+    render();
+  }
 }
 
-async function format(id) {
+async function formatSingle(id) {
   const f = files.find(x => x.id === id);
-  const parser = f.content.trim().startsWith("<") ? "html" : "babel";
+  const parser = f.content.includes('<') ? 'html' : 'babel';
   try {
     f.content = await prettier.format(f.content, { 
-      parser, plugins: prettierPlugins, 
-      singleQuote: true, printWidth: 45 
+      parser, plugins: prettierPlugins, singleQuote: true, printWidth: 50 
     });
     render();
   } catch (e) { alert("Fout: " + e.message); }
 }
 
-function clean(id) {
-  const f = files.find(x => x.id === id);
-  f.content = sanitize(f.content);
-  render();
-}
-
 function copyToClipboard(id) {
   const f = files.find(x => x.id === id);
-  navigator.clipboard.writeText(f.content);
-  alert("Gekopieerd naar klembord!");
+  navigator.clipboard.writeText(f.content).then(() => alert("Gekopieerd!"));
 }
 
-function send(id) {
-  const r = document.getElementById("repo").value;
+function sendSingle(id) {
+  const repo = document.getElementById('repo').value;
   const f = files.find(x => x.id === id);
-  if(!r || !f.name) return alert("Vul repo en naam in!");
-  const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(r)}&path=${encodeURIComponent(f.name)}&text=${encodeURIComponent(f.content)}`;
+  if(!repo || !f.name) return alert("Repo of naam ontbreekt");
+  
+  const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(f.name)}&text=${encodeURIComponent(f.content)}`;
   window.location.href = url;
 }
 
 function sendAll() {
   let i = 0;
   const next = () => {
-    if (i < files.length) { send(files[i++].id); setTimeout(next, 2000); }
+    if (i < files.length) {
+      sendSingle(files[i].id);
+      i++;
+      setTimeout(next, 2500);
+    }
   };
   next();
 }
 
 function processAll() {
-  files.forEach(f => { f.content = sanitize(f.content); });
+  files.forEach(f => {
+    f.content = f.content.replace(/[""]/g, '"').replace(/[‘’]/g, "'").trim();
+  });
   render();
 }
 
 function saveSettings() {
-  localStorage.setItem("cleaner_files", JSON.stringify(files));
-  localStorage.setItem("cleaner_repo", document.getElementById("repo").value);
-  alert("Opgeslagen!");
+  localStorage.setItem("files_v4", JSON.stringify(files));
+  localStorage.setItem("repo_v4", document.getElementById('repo').value);
+  location.reload(); // Harde verversing om alles schoon te maken
 }
 
 window.onload = () => {
-  document.getElementById("repo").value = localStorage.getItem("cleaner_repo") || "";
+  document.getElementById('repo').value = localStorage.getItem("repo_v4") || "";
   render();
 };
 </script>
