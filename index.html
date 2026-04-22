@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Code-cleaner PRO v6.2.3</title>
+    <title>Code-cleaner PRO v6.2.4</title>
 
     <script src="https://unpkg.com/prettier@3.0.0/standalone.js"></script>
     <script src="https://unpkg.com/prettier@3.0.0/plugins/babel.js"></script>
@@ -25,13 +25,36 @@
             background-color: var(--ios-bg);
             color: var(--ios-text);
             font-family: -apple-system, system-ui, sans-serif;
-            padding: env(safe-area-inset-top) 15px 40px 15px;
+            /* Extra ruimte bovenin voor de iPhone notch */
+            padding: calc(env(safe-area-inset-top) + 20px) 15px 40px 15px;
             margin: 0;
         }
 
-        .header { text-align: center; padding: 20px 0; }
-        .header h1 { margin: 0; font-size: 22px; color: var(--ios-blue); }
-        .version { font-size: 10px; color: var(--ios-gray); letter-spacing: 1px; margin-top: 4px; }
+        .header { 
+            text-align: center; 
+            margin-bottom: 25px; 
+        }
+        
+        .header h1 { 
+            margin: 0; 
+            font-size: 24px; 
+            color: var(--ios-text); 
+            font-weight: 700;
+        }
+
+        /* De Versie Badge */
+        .v-badge {
+            display: inline-block;
+            background: var(--ios-blue);
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
         .ios-group {
             background: var(--ios-card);
@@ -43,7 +66,6 @@
 
         label { display: block; color: #8e8e93; font-size: 11px; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
 
-        /* Repo Selector Styling */
         .repo-controls { display: flex; gap: 8px; margin-bottom: 12px; }
         
         select, input[type="text"] {
@@ -55,7 +77,6 @@
             font-size: 16px;
             padding: 12px;
             outline: none;
-            -webkit-appearance: none;
         }
 
         .btn-icon {
@@ -82,6 +103,7 @@
             min-height: 200px;
             margin-bottom: 15px;
             outline: none;
+            font-size: 14px;
         }
 
         .btn {
@@ -112,27 +134,27 @@
 
     <div class="header">
         <h1>Code-cleaner PRO</h1>
-        <div class="version">VERSION 6.2.3</div>
+        <div class="v-badge">v6.2.4</div>
     </div>
 
     <div class="ios-group">
-        <label>Kies of voeg Repo toe</label>
+        <label>Repo Beheer</label>
         <div class="repo-controls">
             <select id="repoSelect" onchange="selectRepo()">
-                <option value="">-- Selecteer Repo --</option>
+                <option value="">-- Kies Repo --</option>
             </select>
             <button class="btn-icon" onclick="deleteRepo()" style="color: var(--ios-red)">🗑️</button>
         </div>
         
         <div class="repo-controls">
-            <input id="newRepo" type="text" placeholder="Nieuwe repo naam...">
+            <input id="newRepo" type="text" placeholder="Nieuwe naam...">
             <button class="btn-icon" onclick="addRepo()" style="background: var(--ios-blue)">+</button>
         </div>
     </div>
 
     <div id="fileList"></div>
 
-    <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand Toevoegen</button>
+    <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand</button>
 
     <div style="margin-top: 30px; border-top: 1px solid #38383a; padding-top: 25px;">
         <button class="btn btn-purple" style="height: 60px; font-size: 17px;" onclick="sendAll()">🚀 Alles naar Working Copy</button>
@@ -156,7 +178,7 @@
 
         function deleteRepo() {
             const sel = document.getElementById('repoSelect').value;
-            if(sel && confirm(`Repo "${sel}" verwijderen uit lijst?`)) {
+            if(sel && confirm(`Repo "${sel}" verwijderen?`)) {
                 repos = repos.filter(r => r !== sel);
                 currentRepo = "";
                 saveRepos();
@@ -176,7 +198,7 @@
 
         function renderRepos() {
             const sel = document.getElementById('repoSelect');
-            sel.innerHTML = '<option value="">-- Kies een Repo --</option>';
+            sel.innerHTML = '<option value="">-- Selecteer Repo --</option>';
             repos.forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = r;
@@ -232,14 +254,13 @@
                 });
                 render();
                 saveGlobal();
-            } catch (err) { alert("Syntax fout!"); }
+            } catch (err) { alert("Check je code op fouten!"); }
         }
 
         function sendItem(id) {
             if(!currentRepo) return alert("⚠️ Kies eerst een Repo!");
             const item = items.find(x => x.id === id);
-            if(!item.name) return alert("⚠️ Vul bestandsnaam in!");
-
+            if(!item.name) return alert("⚠️ Geen bestandsnaam!");
             const url = `working-copy://x-callback-url/write?repo=${encodeURIComponent(currentRepo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}&x-success=http://localhost`;
             window.location.href = url;
         }
@@ -263,7 +284,7 @@
                 const div = document.createElement('div');
                 div.className = "ios-group";
                 div.innerHTML = `
-                    <label>Bestandsnaam</label>
+                    <label>Bestand</label>
                     <input type="text" value="${item.name}" oninput="updateItem(${item.id}, 'name', this.value)">
                     <label>Code</label>
                     <textarea oninput="updateItem(${item.id}, 'content', this.value)">${item.content}</textarea>
