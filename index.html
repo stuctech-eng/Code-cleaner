@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Code-cleaner PRO v6.4.0</title>
+    <title>Code-cleaner PRO v6.7.0</title>
     
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,38 +16,57 @@
     <style>
         :root { --ios-bg: #000; --ios-card: #1c1c1e; --ios-blue: #0a84ff; --ios-green: #32d74b; --ios-purple: #bf5af2; --ios-red: #ff453a; --ios-text: #fff; --ios-gray: #3a3a3c; }
         body { background: var(--ios-bg); color: var(--ios-text); font-family: -apple-system, sans-serif; padding: calc(env(safe-area-inset-top) + 20px) 15px 40px 15px; margin: 0; }
-        .header { text-align: center; margin-bottom: 25px; }
+        .header { text-align: center; margin-bottom: 25px; position: relative; }
         .v-badge { display: inline-block; background: var(--ios-purple); color: white; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; margin-top: 8px; text-transform: uppercase; }
+        .help-trigger { position: absolute; top: 0; right: 10px; background: var(--ios-gray); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; }
         .ios-group { background: var(--ios-card); border-radius: 14px; padding: 15px; margin-bottom: 20px; border: 0.5px solid #38383a; position: relative; }
         label { display: block; color: #8e8e93; font-size: 11px; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
         .repo-controls { display: flex; gap: 8px; margin-bottom: 12px; }
         select, input[type="text"] { flex: 1; background: #2c2c2e; border: none; border-radius: 10px; color: white; font-size: 16px; padding: 12px; outline: none; }
         .btn-icon { width: 45px; background: #3a3a3c; border-radius: 10px; border: none; color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        textarea { width: 100%; background: #000; border: 1px solid #38383a; border-radius: 10px; color: #58a6ff; font-family: monospace; padding: 12px; box-sizing: border-box; min-height: 150px; margin-bottom: 15px; outline: none; }
-        .idea-box { background: #2c2c2e !important; color: #ffd60a !important; }
+        textarea { width: 100%; background: #000; border: 1px solid #38383a; border-radius: 10px; color: #58a6ff; font-family: monospace; padding: 12px; box-sizing: border-box; min-height: 150px; margin-bottom: 15px; outline: none; transition: height 0.3s; }
+        .collapsed textarea { height: 0; min-height: 0; padding: 0; border: none; margin: 0; visibility: hidden; }
         .btn { border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; color: white; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-blue { background: var(--ios-blue); }
         .btn-green { background: var(--ios-green); }
         .btn-purple { background: var(--ios-purple); }
         .btn-gray { background: var(--ios-gray); }
-        .btn-yellow { background: #ffd60a; color: #000; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 5px; }
-        .delete-btn { color: var(--ios-red); background: none; border: none; width: 100%; padding: 10px; font-size: 13px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .status-dot { position: absolute; top: 15px; right: 15px; font-size: 12px; }
+        .collapse-toggle { position: absolute; top: 12px; left: 15px; background: none; border: none; color: var(--ios-blue); font-size: 18px; }
+        .file-header { padding-left: 25px; }
+        
+        /* Help Overlay */
+        #helpModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 40px 20px; overflow-y: auto; box-sizing: border-box; }
+        .help-content h2 { color: var(--ios-blue); }
+        .help-item { margin-bottom: 20px; border-bottom: 0.5px solid #333; padding-bottom: 10px; }
+        .help-item b { color: var(--ios-green); display: block; margin-bottom: 4px; }
     </style>
 </head>
 <body>
+    <div id="helpModal" onclick="this.style.display='none'">
+        <div class="help-content">
+            <h2>Uitleg & Parameters</h2>
+            <div class="help-item"><b>✨ Form (Prettier)</b>Maakt je code leesbaar en verwijdert "foute" iPhone aanhalingstekens automatisch.</div>
+            <div class="help-item"><b>📋 Copy</b>Kopieert de volledige inhoud van het tekstvak naar je klembord.</div>
+            <div class="help-item"><b>🚀 Send</b>Stuurt dit specifieke bestand naar de geopende Categorie in Working Copy.</div>
+            <div class="help-item"><b>📦 Alles naar Working Copy</b>Zet alle bestanden in de lijst één voor één door naar GitHub via Working Copy.</div>
+            <div class="help-item"><b>📤 Export / 📥 Import</b>Maakt een reservekopie van al je projecten als .json bestand. Gebruik dit voor veiligheid!</div>
+            <div class="help-item"><b>▶ / ▼</b>Klik op het pijltje om een bestand in of uit te klappen voor meer overzicht.</div>
+            <p style="text-align:center; color: #8e8e93;">Tik overal om te sluiten</p>
+        </div>
+    </div>
+
     <div class="header">
+        <button class="help-trigger" onclick="document.getElementById('helpModal').style.display='block'">?</button>
         <h1>Code-cleaner PRO</h1>
-        <div class="v-badge">v6.4.0 Smart-Repo</div>
+        <div class="v-badge" id="versionTag">v6.7.0</div>
     </div>
 
     <div class="ios-group">
-        <label>Repo Beheer</label>
+        <label>Project / Categorie</label>
         <div class="repo-controls">
-            <select id="repoSelect" onchange="switchRepo()">
-                <option value="">-- Kies Repo --</option>
-            </select>
+            <select id="repoSelect" onchange="switchRepo()"></select>
             <button class="btn-icon" onclick="deleteRepo()" style="color: var(--ios-red)">🗑️</button>
         </div>
         <div class="repo-controls">
@@ -56,32 +75,25 @@
         </div>
     </div>
 
-    <div class="ios-group" id="ideaSection" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <label style="margin:0;">💡 Project Ideeën</label>
-            <button onclick="addTimestamp()" style="background:none; border:none; color:var(--ios-blue); font-size:12px;">🕒 Tijdstip</button>
-        </div>
-        <textarea id="ideaBox" class="idea-box" placeholder="Typ je plannen..." oninput="saveIdeas()"></textarea>
-        <button class="btn btn-yellow" onclick="copySuperPrompt()">📋 Kopieer Super-Prompt voor Claude</button>
-    </div>
-
     <div id="fileList"></div>
     <button class="btn btn-green" onclick="addFile()">+ Nieuw Bestand</button>
+    <button class="btn btn-purple" onclick="sendAll()">🚀 Alles naar Working Copy</button>
 
-    <div style="margin-top: 30px; border-top: 1px solid #38383a; padding-top: 25px;">
-        <button class="btn btn-purple" style="height: 60px; font-size: 17px;" onclick="sendAll()">🚀 Alles naar Working Copy</button>
+    <div class="ios-group" style="border: 1px dashed #3a3a3c; text-align: center;">
+        <label>Data Management</label>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-gray" style="flex:1" onclick="exportData()">📤 Export</button>
+            <button class="btn btn-gray" style="flex:1" onclick="importData()">📥 Import</button>
+        </div>
     </div>
 
     <script>
-        let repos = JSON.parse(localStorage.getItem("cc_repos_list")) || [];
-        let currentRepo = localStorage.getItem("cc_repo_selected") || "";
+        let repos = JSON.parse(localStorage.getItem("cc_repos_list")) || ["Mijn Project"];
+        let currentRepo = localStorage.getItem("cc_repo_selected") || "Mijn Project";
         let items = [];
-        let sentStatus = {}; 
+        let collapsedStates = {};
 
         function loadItems() {
-            if(!currentRepo) { document.getElementById('ideaSection').style.display = 'none'; items = []; render(); return; }
-            document.getElementById('ideaSection').style.display = 'block';
-            document.getElementById('ideaBox').value = localStorage.getItem(`cc_ideas_${currentRepo}`) || "";
             items = JSON.parse(localStorage.getItem(`cc_files_${currentRepo}`)) || [{ id: Date.now(), name: "index.html", content: "" }];
             render();
         }
@@ -89,7 +101,6 @@
         function switchRepo() {
             currentRepo = document.getElementById('repoSelect').value;
             localStorage.setItem("cc_repo_selected", currentRepo);
-            sentStatus = {}; 
             loadItems();
         }
 
@@ -103,20 +114,19 @@
         }
 
         function deleteRepo() {
-            const sel = document.getElementById('repoSelect').value;
-            if(sel && confirm(`Alles van "${sel}" wissen?`)) {
-                localStorage.removeItem(`cc_files_${sel}`);
-                localStorage.removeItem(`cc_ideas_${sel}`);
-                repos = repos.filter(r => r !== sel); currentRepo = "";
+            if(confirm(`"${currentRepo}" wissen?`)) {
+                localStorage.removeItem(`cc_files_${currentRepo}`);
+                repos = repos.filter(r => r !== currentRepo);
+                if(repos.length === 0) repos = ["Mijn Project"];
+                currentRepo = repos[0];
                 saveRepos(); renderRepos(); loadItems();
             }
         }
 
         function saveRepos() { localStorage.setItem("cc_repos_list", JSON.stringify(repos)); localStorage.setItem("cc_repo_selected", currentRepo); }
-
         function renderRepos() {
             const sel = document.getElementById('repoSelect');
-            sel.innerHTML = '<option value="">-- Kies Repo --</option>';
+            sel.innerHTML = '';
             repos.forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = r; opt.textContent = r;
@@ -125,81 +135,91 @@
             });
         }
 
-        function saveFiles() { if(currentRepo) localStorage.setItem(`cc_files_${currentRepo}`, JSON.stringify(items)); }
-        function saveIdeas() { if(currentRepo) localStorage.setItem(`cc_ideas_${currentRepo}`, document.getElementById('ideaBox').value); }
+        function saveFiles() { localStorage.setItem(`cc_files_${currentRepo}`, JSON.stringify(items)); }
+        function toggleCollapse(id) { collapsedStates[id] = !collapsedStates[id]; render(); }
 
-        function addTimestamp() {
-            const box = document.getElementById('ideaBox');
-            const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            box.value = `[${now}] \n` + box.value;
-            saveIdeas();
+        function copyCode(id) {
+            const item = items.find(x => x.id === id);
+            navigator.clipboard.writeText(item.content).then(() => alert("📋 Gekopieerd!"));
         }
 
-        function copySuperPrompt() {
-            const ideas = document.getElementById('ideaBox').value;
-            const fileNames = items.map(i => i.name || "Naamloos").join(", ");
-            const prompt = `PROJECT: ${currentRepo}\n\nIDEEËN & CONTEXT:\n${ideas}\n\nHUIDIGE BESTANDSSTRUCTUUR:\n${fileNames}\n\nUpdate de code op basis van deze context.`;
-            navigator.clipboard.writeText(prompt).then(() => alert("✅ Super-Prompt gekopieerd!"));
-        }
-
-        function addFile() { if(!currentRepo) return alert("Kies repo!"); items.push({ id: Date.now(), name: "", content: "" }); saveFiles(); render(); }
-        function updateItem(id, key, val) { const item = items.find(x => x.id === id); if(item) { item[key] = val; saveFiles(); render(); } }
-        function removeItem(id) { if(confirm("Wissen?")) { items = items.filter(x => x.id !== id); if(items.length===0) items.push({id:Date.now(), name:"index.html", content:""}); saveFiles(); render(); } }
-        
-        function cleanItem(id) { 
+        function addFile() { items.push({ id: Date.now(), name: "", content: "" }); saveFiles(); render(); }
+        function updateItem(id, key, val) { 
             const item = items.find(x => x.id === id); 
-            if(item) { item.content = item.content.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'"); saveFiles(); render(); } 
+            if(item) { 
+                item[key] = val.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'"); 
+                saveFiles(); 
+            } 
         }
 
         async function formatItem(id) {
             const item = items.find(x => x.id === id);
             if(!item || !item.content.trim()) return;
-            const isHTML = item.name.endsWith('.html') || item.content.trim().startsWith('<');
             try {
-                item.content = await prettier.format(item.content, { parser: isHTML ? 'html' : 'babel', plugins: prettierPlugins, singleQuote: true, printWidth: 40 });
+                const isHTML = item.name.endsWith('.html') || item.content.includes('<html');
+                item.content = await prettier.format(item.content, { parser: isHTML ? 'html' : 'babel', plugins: prettierPlugins, singleQuote: true });
                 saveFiles(); render();
-            } catch (err) { alert("Codefout!"); }
-        }
-
-        function sendItem(id) {
-            if(!currentRepo) return;
-            const item = items.find(x => x.id === id);
-            sentStatus[id] = true;
-            render();
-            window.location.href = `working-copy://x-callback-url/write?repo=${encodeURIComponent(currentRepo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}&x-success=http://localhost`;
-        }
-
-        function sendAll() {
-            let i = 0;
-            const next = () => { if (i < items.length) { sendItem(items[i].id); i++; setTimeout(next, 2000); } }
-            next();
+            } catch (err) { alert("Code niet herkenbaar!"); }
         }
 
         function render() {
             const container = document.getElementById("fileList");
             container.innerHTML = "";
             items.forEach(item => {
-                let dot = "⚪";
-                if(item.content.trim().length > 0) dot = "🔵";
-                if(sentStatus[item.id]) dot = "✅";
-
+                const isCollapsed = collapsedStates[item.id];
                 const div = document.createElement('div');
-                div.className = "ios-group";
+                div.className = `ios-group ${isCollapsed ? 'collapsed' : ''}`;
                 div.innerHTML = `
-                    <div class="status-dot">${dot}</div>
-                    <label>Bestand</label>
-                    <input type="text" value="${item.name}" oninput="updateItem(${item.id}, 'name', this.value)">
-                    <label>Code</label>
+                    <button class="collapse-toggle" onclick="toggleCollapse(${item.id})">${isCollapsed ? '▶' : '▼'}</button>
+                    <div class="status-dot">${item.content.length > 0 ? '🔵' : '⚪'}</div>
+                    <div class="file-header"><input type="text" value="${item.name}" oninput="updateItem(${item.id}, 'name', this.value)" placeholder="index.html"></div>
                     <textarea oninput="updateItem(${item.id}, 'content', this.value)">${item.content}</textarea>
-                    <div class="grid-3">
-                        <button class="btn btn-gray" onclick="formatItem(${item.id})">✨ Form</button>
-                        <button class="btn btn-blue" onclick="cleanItem(${item.id})">🪄 Clean</button>
-                        <button class="btn btn-purple" onclick="sendItem(${item.id})">🚀 Send</button>
+                    <div class="grid-4">
+                        <button class="btn-icon" onclick="formatItem(${item.id})">✨</button>
+                        <button class="btn-icon" onclick="copyCode(${item.id})">📋</button>
+                        <button class="btn-icon" onclick="removeItem(${item.id})" style="color:var(--ios-red)">🗑️</button>
+                        <button class="btn-icon" onclick="sendItem(${item.id})" style="background:var(--ios-purple)">🚀</button>
                     </div>
-                    <button class="delete-btn" onclick="removeItem(${item.id})">🗑️ Verwijder</button>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        function removeItem(id) { if(confirm("Wissen?")) { items = items.filter(x => x.id !== id); saveFiles(); render(); } }
+
+        function sendItem(id) {
+            const item = items.find(x => x.id === id);
+            window.location.href = `working-copy://x-callback-url/write?repo=${encodeURIComponent(currentRepo)}&path=${encodeURIComponent(item.name)}&text=${encodeURIComponent(item.content)}`;
+        }
+
+        function sendAll() {
+            let i = 0;
+            const next = () => { if (i < items.length) { sendItem(items[i].id); i++; setTimeout(next, 1500); } }
+            next();
+        }
+
+        function exportData() {
+            const data = { repos: repos, files: {} };
+            repos.forEach(r => { data.files[r] = localStorage.getItem(`cc_files_${r}`); });
+            const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'code_cleaner_backup.json'; a.click();
+        }
+
+        function importData() {
+            const input = document.createElement('input'); input.type = 'file';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    const data = JSON.parse(event.target.result);
+                    localStorage.setItem("cc_repos_list", JSON.stringify(data.repos));
+                    Object.keys(data.files).forEach(k => localStorage.setItem(`cc_files_${k}`, data.files[k]));
+                    location.reload();
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         }
 
         window.onload = () => { renderRepos(); loadItems(); };
