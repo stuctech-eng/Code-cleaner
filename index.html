@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Code-cleaner PRO v6.7.0</title>
+    <title>Code-cleaner PRO v6.7.1</title>
     
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,18 +25,19 @@
         select, input[type="text"] { flex: 1; background: #2c2c2e; border: none; border-radius: 10px; color: white; font-size: 16px; padding: 12px; outline: none; }
         .btn-icon { width: 45px; background: #3a3a3c; border-radius: 10px; border: none; color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         textarea { width: 100%; background: #000; border: 1px solid #38383a; border-radius: 10px; color: #58a6ff; font-family: monospace; padding: 12px; box-sizing: border-box; min-height: 150px; margin-bottom: 15px; outline: none; transition: height 0.3s; }
-        .collapsed textarea { height: 0; min-height: 0; padding: 0; border: none; margin: 0; visibility: hidden; }
+        .idea-box { background: #2c2c2e !important; color: #ffd60a !important; min-height: 100px !important; }
+        .collapsed textarea, .collapsed .grid-4 { height: 0; min-height: 0; padding: 0; border: none; margin: 0; display: none; }
         .btn { border: none; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; color: white; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-blue { background: var(--ios-blue); }
         .btn-green { background: var(--ios-green); }
         .btn-purple { background: var(--ios-purple); }
         .btn-gray { background: var(--ios-gray); }
+        .btn-yellow { background: #ffd60a; color: #000; margin-top: 10px; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .status-dot { position: absolute; top: 15px; right: 15px; font-size: 12px; }
         .collapse-toggle { position: absolute; top: 12px; left: 15px; background: none; border: none; color: var(--ios-blue); font-size: 18px; }
         .file-header { padding-left: 25px; }
         
-        /* Help Overlay */
         #helpModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 40px 20px; overflow-y: auto; box-sizing: border-box; }
         .help-content h2 { color: var(--ios-blue); }
         .help-item { margin-bottom: 20px; border-bottom: 0.5px solid #333; padding-bottom: 10px; }
@@ -47,24 +48,23 @@
     <div id="helpModal" onclick="this.style.display='none'">
         <div class="help-content">
             <h2>Uitleg & Parameters</h2>
-            <div class="help-item"><b>✨ Form (Prettier)</b>Maakt je code leesbaar en verwijdert "foute" iPhone aanhalingstekens automatisch.</div>
-            <div class="help-item"><b>📋 Copy</b>Kopieert de volledige inhoud van het tekstvak naar je klembord.</div>
-            <div class="help-item"><b>🚀 Send</b>Stuurt dit specifieke bestand naar de geopende Categorie in Working Copy.</div>
-            <div class="help-item"><b>📦 Alles naar Working Copy</b>Zet alle bestanden in de lijst één voor één door naar GitHub via Working Copy.</div>
-            <div class="help-item"><b>📤 Export / 📥 Import</b>Maakt een reservekopie van al je projecten als .json bestand. Gebruik dit voor veiligheid!</div>
-            <div class="help-item"><b>▶ / ▼</b>Klik op het pijltje om een bestand in of uit te klappen voor meer overzicht.</div>
-            <p style="text-align:center; color: #8e8e93;">Tik overal om te sluiten</p>
+            <div class="help-item"><b>✨ Form (Prettier)</b>Maakt je code leesbaar en verwijdert "foute" iPhone tekens.</div>
+            <div class="help-item"><b>📋 Super-Prompt</b>Kopieert je ideeën én bestandsnamen voor Claude.</div>
+            <div class="help-item"><b>🚀 Send</b>Stuurt bestand naar Working Copy.</div>
+            <div class="help-item"><b>📦 Alles verzenden</b>Zet alle bestanden door naar GitHub.</div>
+            <div class="help-item"><b>📤 Export / 📥 Import</b>Maak backups van al je werk.</div>
+            <p style="text-align:center; color: #8e8e93;">Tik om te sluiten</p>
         </div>
     </div>
 
     <div class="header">
         <button class="help-trigger" onclick="document.getElementById('helpModal').style.display='block'">?</button>
         <h1>Code-cleaner PRO</h1>
-        <div class="v-badge" id="versionTag">v6.7.0</div>
+        <div class="v-badge">v6.7.1</div>
     </div>
 
     <div class="ios-group">
-        <label>Project / Categorie</label>
+        <label>Project / Repo</label>
         <div class="repo-controls">
             <select id="repoSelect" onchange="switchRepo()"></select>
             <button class="btn-icon" onclick="deleteRepo()" style="color: var(--ios-red)">🗑️</button>
@@ -73,6 +73,12 @@
             <input id="newRepo" type="text" placeholder="Nieuwe naam...">
             <button class="btn-icon" onclick="addRepo()" style="background: var(--ios-blue)">+</button>
         </div>
+    </div>
+
+    <div class="ios-group" id="ideaSection">
+        <label>💡 Project Ideeën & Claude Context</label>
+        <textarea id="ideaBox" class="idea-box" placeholder="Typ hier je plannen..." oninput="saveIdeas()"></textarea>
+        <button class="btn btn-yellow" onclick="copySuperPrompt()">📋 Kopieer Super-Prompt voor Claude</button>
     </div>
 
     <div id="fileList"></div>
@@ -95,6 +101,7 @@
 
         function loadItems() {
             items = JSON.parse(localStorage.getItem(`cc_files_${currentRepo}`)) || [{ id: Date.now(), name: "index.html", content: "" }];
+            document.getElementById('ideaBox').value = localStorage.getItem(`cc_ideas_${currentRepo}`) || "";
             render();
         }
 
@@ -102,6 +109,15 @@
             currentRepo = document.getElementById('repoSelect').value;
             localStorage.setItem("cc_repo_selected", currentRepo);
             loadItems();
+        }
+
+        function saveIdeas() { localStorage.setItem(`cc_ideas_${currentRepo}`, document.getElementById('ideaBox').value); }
+
+        function copySuperPrompt() {
+            const ideas = document.getElementById('ideaBox').value;
+            const fileNames = items.map(i => i.name || "Naamloos").join(", ");
+            const prompt = `PROJECT: ${currentRepo}\n\nCONTEXT:\n${ideas}\n\nBESTANDEN:\n${fileNames}\n\nHelp me met de volgende stap.`;
+            navigator.clipboard.writeText(prompt).then(() => alert("✅ Super-Prompt gekopieerd!"));
         }
 
         function addRepo() {
@@ -116,6 +132,7 @@
         function deleteRepo() {
             if(confirm(`"${currentRepo}" wissen?`)) {
                 localStorage.removeItem(`cc_files_${currentRepo}`);
+                localStorage.removeItem(`cc_ideas_${currentRepo}`);
                 repos = repos.filter(r => r !== currentRepo);
                 if(repos.length === 0) repos = ["Mijn Project"];
                 currentRepo = repos[0];
@@ -124,6 +141,7 @@
         }
 
         function saveRepos() { localStorage.setItem("cc_repos_list", JSON.stringify(repos)); localStorage.setItem("cc_repo_selected", currentRepo); }
+        
         function renderRepos() {
             const sel = document.getElementById('repoSelect');
             sel.innerHTML = '';
@@ -138,12 +156,8 @@
         function saveFiles() { localStorage.setItem(`cc_files_${currentRepo}`, JSON.stringify(items)); }
         function toggleCollapse(id) { collapsedStates[id] = !collapsedStates[id]; render(); }
 
-        function copyCode(id) {
-            const item = items.find(x => x.id === id);
-            navigator.clipboard.writeText(item.content).then(() => alert("📋 Gekopieerd!"));
-        }
-
         function addFile() { items.push({ id: Date.now(), name: "", content: "" }); saveFiles(); render(); }
+        
         function updateItem(id, key, val) { 
             const item = items.find(x => x.id === id); 
             if(item) { 
@@ -159,7 +173,7 @@
                 const isHTML = item.name.endsWith('.html') || item.content.includes('<html');
                 item.content = await prettier.format(item.content, { parser: isHTML ? 'html' : 'babel', plugins: prettierPlugins, singleQuote: true });
                 saveFiles(); render();
-            } catch (err) { alert("Code niet herkenbaar!"); }
+            } catch (err) { alert("Codefout!"); }
         }
 
         function render() {
@@ -172,11 +186,11 @@
                 div.innerHTML = `
                     <button class="collapse-toggle" onclick="toggleCollapse(${item.id})">${isCollapsed ? '▶' : '▼'}</button>
                     <div class="status-dot">${item.content.length > 0 ? '🔵' : '⚪'}</div>
-                    <div class="file-header"><input type="text" value="${item.name}" oninput="updateItem(${item.id}, 'name', this.value)" placeholder="index.html"></div>
+                    <div class="file-header"><input type="text" value="${item.name}" oninput="updateItem(${item.id}, 'name', this.value)" placeholder="Bestandsnaam..."></div>
                     <textarea oninput="updateItem(${item.id}, 'content', this.value)">${item.content}</textarea>
                     <div class="grid-4">
                         <button class="btn-icon" onclick="formatItem(${item.id})">✨</button>
-                        <button class="btn-icon" onclick="copyCode(${item.id})">📋</button>
+                        <button class="btn-icon" onclick="navigator.clipboard.writeText('${item.content.replace(/'/g, "\\'")}').then(() => alert('📋'))">📋</button>
                         <button class="btn-icon" onclick="removeItem(${item.id})" style="color:var(--ios-red)">🗑️</button>
                         <button class="btn-icon" onclick="sendItem(${item.id})" style="background:var(--ios-purple)">🚀</button>
                     </div>
@@ -199,25 +213,27 @@
         }
 
         function exportData() {
-            const data = { repos: repos, files: {} };
-            repos.forEach(r => { data.files[r] = localStorage.getItem(`cc_files_${r}`); });
+            const data = { repos: repos, files: {}, ideas: {} };
+            repos.forEach(r => { 
+                data.files[r] = localStorage.getItem(`cc_files_${r}`); 
+                data.ideas[r] = localStorage.getItem(`cc_ideas_${r}`);
+            });
             const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'code_cleaner_backup.json'; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'code_cleaner_v671.json'; a.click();
         }
 
         function importData() {
             const input = document.createElement('input'); input.type = 'file';
             input.onchange = e => {
-                const file = e.target.files[0];
                 const reader = new FileReader();
-                reader.onload = event => {
-                    const data = JSON.parse(event.target.result);
+                reader.onload = ev => {
+                    const data = JSON.parse(ev.target.result);
                     localStorage.setItem("cc_repos_list", JSON.stringify(data.repos));
                     Object.keys(data.files).forEach(k => localStorage.setItem(`cc_files_${k}`, data.files[k]));
+                    if(data.ideas) Object.keys(data.ideas).forEach(k => localStorage.setItem(`cc_ideas_${k}`, data.ideas[k]));
                     location.reload();
                 };
-                reader.readAsText(file);
+                reader.readAsText(e.target.files[0]);
             };
             input.click();
         }
